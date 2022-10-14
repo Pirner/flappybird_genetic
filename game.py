@@ -4,6 +4,10 @@ import sys
 import pygame
 from pygame.locals import *
 
+from src.bird import Bird
+from src.constants import bird_flap_velocity
+
+
 # Global Variables for the game
 window_width = 600
 window_height = 499
@@ -19,22 +23,22 @@ bird_player_image = 'assets/bird.png'
 sea_level_image = 'assets/base.jfif'
 
 
-# Checking if bird is above the sealevel.
-def isGameOver(horizontal, vertical, up_pipes, down_pipes):
-    if vertical > elevation - 25 or vertical < 0:
+# Checking if bird is above the sea level.
+def isGameOver(bird_horizontal, bird_vertical, up_pipes, down_pipes):
+    if bird_vertical > elevation - 25 or bird_vertical < 0:
         return True
 
     # Checking if bird hits the upper pipe or not
     for pipe in up_pipes:
         pipe_height = game_images['pipeimage'][0].get_height()
-        if (vertical < pipe_height + pipe['y']
-                and abs(horizontal - pipe['x']) < game_images['pipeimage'][0].get_width()):
+        if (bird_vertical < pipe_height + pipe['y']
+                and abs(bird_horizontal - pipe['x']) < game_images['pipeimage'][0].get_width()):
             return True
 
     # Checking if bird hits the lower pipe or not
     for pipe in down_pipes:
-        if (vertical + game_images['flappybird'].get_height() > pipe['y']) \
-                and abs(horizontal - pipe['x']) < game_images['pipeimage'][0].get_width():
+        if (bird_vertical + game_images['flappybird'].get_height() > pipe['y']) \
+                and abs(bird_horizontal - pipe['x']) < game_images['pipeimage'][0].get_width():
             return True
 
     return False
@@ -67,7 +71,7 @@ def flappygame():
     ground = 0
     mytempheight = 100
 
-    # Generating two pipes for blitting on window
+    # Generating two pipes for blit on window
     first_pipe = create_pipe()
     second_pipe = create_pipe()
 
@@ -83,35 +87,38 @@ def flappygame():
     up_pipes = [
         {'x': window_width + 300 - mytempheight,
          'y': first_pipe[0]['y']},
-        {'x': window_width + 200 - mytempheight + (window_width / 2),
+        {'x': window_width + 300 - mytempheight + (window_width / 2),
          'y': second_pipe[0]['y']},
     ]
 
-    pipeVelX = -4  # pipe velocity along x
-
-    bird_velocity_y = -9  # bird velocity
-    bird_Max_Vel_Y = 10
-    bird_Min_Vel_Y = -8
-    birdAccY = 1
+    pipe_vel_x = -4  # pipe velocity along x
 
     # velocity while flapping
-    bird_flap_velocity = -8
+    # bird_flap_velocity = -8
 
-    # It is true only when the bird is flapping
-    bird_flapped = False
+    # create the bird
+    bird = Bird(y=game_images['flappybird'].get_height())
+
     while True:
 
         # Handling the key pressing events
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+        for event_fgame in pygame.event.get():
+            if event_fgame.type == QUIT or (event_fgame.type == KEYDOWN and event_fgame.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
+            if event_fgame.type == KEYDOWN and (event_fgame.key == K_SPACE or event_fgame.key == K_UP):
                 if vertical > 0:
-                    bird_velocity_y = bird_flap_velocity
-                    bird_flapped = True
+                    bird.velocity_y = bird_flap_velocity
+                    bird.flapped = True
 
-        # This function will return true if the flappybird is crashed
+        # TODO implement automatic flapping mechanism
+        # flap_selector = random.uniform(0, 1)
+        # bird_flapped = flap_selector > 0.85
+        # if bird_flapped:
+            # print('flap_selector {0}, flapped: {1}'.format(flap_selector, bird_flapped))
+            # bird_velocity_y = bird_flap_velocity
+
+        # This function will return true if the flappy bird is crashed
         game_over = isGameOver(horizontal, vertical, up_pipes, down_pipes)
         if game_over:
             return
@@ -125,18 +132,22 @@ def flappygame():
                 your_score += 1
                 print(f"Your your_score is {your_score}")
 
-        if bird_velocity_y < bird_Max_Vel_Y and not bird_flapped:
-            bird_velocity_y += birdAccY
+        # if bird_velocity_y < bird_Max_Vel_Y and not bird_flapped:
+            # bird_velocity_y += birdAccY
+        if bird.velocity_y < bird.max_vel_y and not bird.flapped:
+            bird.velocity_y += bird.acc_y
 
-        if bird_flapped:
-            bird_flapped = False
-        playerHeight = game_images['flappybird'].get_height()
-        vertical = vertical + min(bird_velocity_y, elevation - vertical - playerHeight)
+        if bird.flapped:
+            bird.flapped = False
+
+        # playerHeight = game_images['flappybird'].get_height()
+        bird.y = game_images['flappybird'].get_height()
+        vertical = vertical + min(bird.velocity_y, elevation - vertical - bird.y)
 
         # move pipes to the left
         for upperPipe, lowerPipe in zip(up_pipes, down_pipes):
-            upperPipe['x'] += pipeVelX
-            lowerPipe['x'] += pipeVelX
+            upperPipe['x'] += pipe_vel_x
+            lowerPipe['x'] += pipe_vel_x
 
         # Add a new pipe when the first is about
         # to cross the leftmost part of the screen
