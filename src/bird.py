@@ -6,3 +6,4 @@ class Bird(object):
         self.acc_y = 1
         self.flapped = False
         self.y = y
+

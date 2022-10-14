@@ -6,6 +6,7 @@ from pygame.locals import *
 
 from src.bird import Bird
 from src.constants import bird_flap_velocity
+from src.pipe import Pipe, PipePair
 
 
 # Global Variables for the game
@@ -31,20 +32,20 @@ def isGameOver(bird_horizontal, bird_vertical, up_pipes, down_pipes):
     # Checking if bird hits the upper pipe or not
     for pipe in up_pipes:
         pipe_height = game_images['pipeimage'][0].get_height()
-        if (bird_vertical < pipe_height + pipe['y']
-                and abs(bird_horizontal - pipe['x']) < game_images['pipeimage'][0].get_width()):
+        if (bird_vertical < pipe_height + pipe.y# pipe['y']
+                and abs(bird_horizontal - pipe.x) < game_images['pipeimage'][0].get_width()):
             return True
 
     # Checking if bird hits the lower pipe or not
     for pipe in down_pipes:
-        if (bird_vertical + game_images['flappybird'].get_height() > pipe['y']) \
-                and abs(bird_horizontal - pipe['x']) < game_images['pipeimage'][0].get_width():
+        if (bird_vertical + game_images['flappybird'].get_height() > pipe.y) \
+                and abs(bird_horizontal - pipe.x) < game_images['pipeimage'][0].get_width():
             return True
 
     return False
 
 
-def create_pipe():
+def create_pipe() -> PipePair:
     offset = window_height / 3
     pipe_height = game_images['pipeimage'][0].get_height()
 
@@ -61,7 +62,11 @@ def create_pipe():
         # lower Pipe
         {'x': pipe_x, 'y': y2}
     ]
-    return pipe
+    up_pipe = Pipe(x=pipe_x, y=-y1)
+    lo_pipe = Pipe(x=pipe_x, y=y2)
+    pipe_pair = PipePair(upper_pipe=up_pipe, lower_pipe=lo_pipe)
+    # return pipe
+    return pipe_pair
 
 
 def flappygame():
@@ -76,20 +81,29 @@ def flappygame():
     second_pipe = create_pipe()
 
     # List containing lower pipes
-    down_pipes = [
-        {'x': window_width + 300 - mytempheight,
-         'y': first_pipe[1]['y']},
-        {'x': window_width + 300 - mytempheight + (window_width / 2),
-         'y': second_pipe[1]['y']},
-    ]
+    # down_pipes = [
+    #     {'x': window_width + 300 - mytempheight,
+    #      'y': first_pipe[1]['y']},
+    #     {'x': window_width + 300 - mytempheight + (window_width / 2),
+    #      'y': second_pipe[1]['y']},
+    # ]
 
     # List Containing upper pipes
-    up_pipes = [
-        {'x': window_width + 300 - mytempheight,
-         'y': first_pipe[0]['y']},
-        {'x': window_width + 300 - mytempheight + (window_width / 2),
-         'y': second_pipe[0]['y']},
-    ]
+    # up_pipes = [
+    #     {'x': window_width + 300 - mytempheight,
+    #      'y': first_pipe[0]['y']},
+    #     {'x': window_width + 300 - mytempheight + (window_width / 2),
+    #      'y': second_pipe[0]['y']},
+    # ]
+
+    # set default values
+    first_pipe.upper_pipe.x = window_width + 300 - mytempheight
+    first_pipe.lower_pipe.x = window_width + 300 - mytempheight
+    second_pipe.upper_pipe.x = window_width + 300 - mytempheight + (window_width / 2)
+    second_pipe.lower_pipe.x = window_width + 300 - mytempheight + (window_width / 2)
+
+    down_pipes = [first_pipe.lower_pipe, second_pipe.lower_pipe]
+    up_pipes = [first_pipe.upper_pipe, second_pipe.upper_pipe]
 
     pipe_vel_x = -4  # pipe velocity along x
 
@@ -117,6 +131,7 @@ def flappygame():
         # if bird_flapped:
             # print('flap_selector {0}, flapped: {1}'.format(flap_selector, bird_flapped))
             # bird_velocity_y = bird_flap_velocity
+        # -> compute the distance to the pipes
 
         # This function will return true if the flappy bird is crashed
         game_over = isGameOver(horizontal, vertical, up_pipes, down_pipes)
@@ -126,7 +141,7 @@ def flappygame():
         # check for your_score
         playerMidPos = horizontal + game_images['flappybird'].get_width() / 2
         for pipe in up_pipes:
-            pipeMidPos = pipe['x'] + game_images['pipeimage'][0].get_width() / 2
+            pipeMidPos = pipe.x + game_images['pipeimage'][0].get_width() / 2
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                 # Printing the score
                 your_score += 1
@@ -146,18 +161,18 @@ def flappygame():
 
         # move pipes to the left
         for upperPipe, lowerPipe in zip(up_pipes, down_pipes):
-            upperPipe['x'] += pipe_vel_x
-            lowerPipe['x'] += pipe_vel_x
+            upperPipe.x += pipe_vel_x
+            lowerPipe.x += pipe_vel_x
 
         # Add a new pipe when the first is about
         # to cross the leftmost part of the screen
-        if 0 < up_pipes[0]['x'] < 5:
+        if 0 < up_pipes[0].x < 5:
             newpipe = create_pipe()
             up_pipes.append(newpipe[0])
             down_pipes.append(newpipe[1])
 
         # if the pipe is out of the screen, remove it
-        if up_pipes[0]['x'] < -game_images['pipeimage'][0].get_width():
+        if up_pipes[0].x < -game_images['pipeimage'][0].get_width():
             up_pipes.pop(0)
             down_pipes.pop(0)
 
@@ -165,9 +180,9 @@ def flappygame():
         window.blit(game_images['background'], (0, 0))
         for upperPipe, lowerPipe in zip(up_pipes, down_pipes):
             window.blit(game_images['pipeimage'][0],
-                        (upperPipe['x'], upperPipe['y']))
+                        (upperPipe.x, upperPipe.y))
             window.blit(game_images['pipeimage'][1],
-                        (lowerPipe['x'], lowerPipe['y']))
+                        (lowerPipe.x, lowerPipe.y))
 
         window.blit(game_images['sea_level'], (ground, elevation))
         window.blit(game_images['flappybird'], (horizontal, vertical))
