@@ -8,7 +8,7 @@ class Bird(object):
         self.min_vel_y = -8
         self.acc_y = 1
         self.flapped = False
-        self.y = y
+        self.y = y  # vertical  
 
     def compute_decision_inputs(self, pipes: PipePair, game_images):
         print('computing distance')
