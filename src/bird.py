@@ -1,5 +1,6 @@
 from typing import List
 import math
+import numpy as np
 
 from src.pipe import PipePair, Pipe
 
@@ -12,11 +13,14 @@ class Bird(object):
         self.acc_y = 1
         self.flapped = False
         self.y = y  # vertical
-        self.x = x # horizontal
+        self.x = x  # horizontal
+
+        self.inputWeights = np.random.normal(0, scale=0.1, size=(5, 3))
+        self.hiddenWeights = np.random.normal(0, scale=0.1, size=(3, 1))
 
     def compute_decision_inputs(self, upper_pipes: List[Pipe], lower_pipes: List[Pipe], game_images):
-        # TODO -> select pipepair which is the nearest coming from right of the screen (positive x distance)
-        # print('computing distance')
+        # -> select pipepair which is the nearest coming from right of the screen (positive x distance)
+
         pipe_height = game_images['pipeimage'][0].get_height()
         bird_height = game_images['flappybird'].get_height()
 
@@ -37,3 +41,27 @@ class Bird(object):
         lo_dist_y = lo_pipe_y - self.y
 
         print('x_dist: {0}, y_lo_dist {1}, y_up_dist {2}'.format(aux_x, lo_dist_y, up_dist_y))
+
+    def sigmoid(self, x):
+        """
+        The sigmoid activation function for the neural net
+        INPUT: x - The value to calculate
+        OUTPUT: The calculated result
+        """
+
+        return 1 / (1 + np.exp(-x))
+
+    def jump_decision(self):
+        BIAS = -0.5
+
+        # X = [self.y, self.distanceBot, self.distanceTop, self.distanceX, self.velocity]
+        X = [0.1, 0.2, 0.3, 0.4, 0.5]
+        hidden_layer_in = np.dot(X, self.inputWeights)
+        hidden_layer_out = self.sigmoid(hidden_layer_in)
+        output_layer_in = np.dot(hidden_layer_out, self.hiddenWeights)
+        prediction = self.sigmoid(output_layer_in)
+
+        if prediction + BIAS > 0:
+            return True
+        else:
+            return False

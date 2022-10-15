@@ -125,12 +125,6 @@ def flappygame():
                     bird.velocity_y = bird_flap_velocity
                     bird.flapped = True
 
-        # TODO implement automatic flapping mechanism
-        # flap_selector = random.uniform(0, 1)
-        # bird_flapped = flap_selector > 0.85
-        # if bird_flapped:
-            # print('flap_selector {0}, flapped: {1}'.format(flap_selector, bird_flapped))
-            # bird_velocity_y = bird_flap_velocity
         # -> compute the distance to the pipes
         # next pair is the pair with the lowest positive x distance
         bird.compute_decision_inputs(
