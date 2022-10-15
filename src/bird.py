@@ -1,4 +1,7 @@
-from src.pipe import PipePair
+from typing import List
+import math
+
+from src.pipe import PipePair, Pipe
 
 
 class Bird(object):
@@ -11,32 +14,26 @@ class Bird(object):
         self.y = y  # vertical
         self.x = x # horizontal
 
-    def compute_decision_inputs(self, upper_pipes, lower_pipes, game_images):
+    def compute_decision_inputs(self, upper_pipes: List[Pipe], lower_pipes: List[Pipe], game_images):
         # TODO -> select pipepair which is the nearest coming from right of the screen (positive x distance)
         # print('computing distance')
         pipe_height = game_images['pipeimage'][0].get_height()
         bird_height = game_images['flappybird'].get_height()
 
-        up_pipe_y = pipe_height + pipes.upper_pipe.y
-        lo_pipe_y = bird_height + pipes.lower_pipe.y
+        aux_x = math.inf
+        best_up = None
+        best_lo = None
 
+        for up_pipe, lo_pipe in zip(upper_pipes, lower_pipes):
+            x_dist_up = lo_pipe.x - self.x
+            if aux_x > x_dist_up >= 0:
+                aux_x = x_dist_up
+                best_up = up_pipe
+                best_lo = lo_pipe
+
+        up_pipe_y = pipe_height + best_up.y
+        lo_pipe_y = bird_height + best_lo.y
         up_dist_y = self.y - up_pipe_y
         lo_dist_y = lo_pipe_y - self.y
 
-        x_dist = pipes.lower_pipe.x - self.x
-        print('x_dist: {0}'.format(x_dist))
-        # y_dist_up = pipe_height + pipes.upper_pipe.y
-        # y_dist_lo = pipe_height + pipes.lower_pipe.y
-        # print('happening')
-        # y_dist_down_pipe = abs(self.y )
-        # pipe_height = game_images['pipeimage'][0].get_height()
-        # if (bird_vertical < pipe_height + pipe.y  # pipe['y']
-        #         and abs(bird_horizontal - pipe.x) < game_images['pipeimage'][0].get_width()):
-        #     return True
-        #
-        # # Checking if bird hits the lower pipe or not
-        # for pipe in down_pipes:
-        #     if (bird_vertical + game_images['flappybird'].get_height() > pipe.y) \
-        #             and abs(bird_horizontal - pipe.x) < game_images['pipeimage'][0].get_width():
-        #         return True
-
+        print('x_dist: {0}, y_lo_dist {1}, y_up_dist {2}'.format(aux_x, lo_dist_y, up_dist_y))
