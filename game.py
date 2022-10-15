@@ -75,26 +75,11 @@ def flappygame():
     vertical = int(window_width / 2)
     ground = 0
     mytempheight = 100
+    n_birds = 100
 
     # Generating two pipes for blit on window
     first_pipe = create_pipe()
     second_pipe = create_pipe()
-
-    # List containing lower pipes
-    # down_pipes = [
-    #     {'x': window_width + 300 - mytempheight,
-    #      'y': first_pipe[1]['y']},
-    #     {'x': window_width + 300 - mytempheight + (window_width / 2),
-    #      'y': second_pipe[1]['y']},
-    # ]
-
-    # List Containing upper pipes
-    # up_pipes = [
-    #     {'x': window_width + 300 - mytempheight,
-    #      'y': first_pipe[0]['y']},
-    #     {'x': window_width + 300 - mytempheight + (window_width / 2),
-    #      'y': second_pipe[0]['y']},
-    # ]
 
     # set default values
     first_pipe.upper_pipe.x = window_width + 300 - mytempheight
@@ -107,57 +92,65 @@ def flappygame():
 
     pipe_vel_x = -4  # pipe velocity along x
 
-    # velocity while flapping
-    # bird_flap_velocity = -8
-
-    # create the bird
-    bird = Bird(y=int(window_width / 2), x=int(window_width / 5))
+    # create the bird -
+    # bird = Bird(y=int(window_width / 2), x=int(window_width / 5))
+    birds = [Bird(y=int(window_width / 2), x=int(window_width / 5)) for i in range(10)]
 
     while True:
+        birds = list(filter(lambda c_b: c_b.dead is False, birds))
+        print('alive birds: {0}'.format(len(birds)))
+        if len(birds) <= 0:
+            return
 
         # Handling the key pressing events
         for event_fgame in pygame.event.get():
             if event_fgame.type == QUIT or (event_fgame.type == KEYDOWN and event_fgame.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event_fgame.type == KEYDOWN and (event_fgame.key == K_SPACE or event_fgame.key == K_UP):
-                if bird.y > 0:
-                    bird.velocity_y = bird_flap_velocity
-                    bird.flapped = True
+            # if event_fgame.type == KEYDOWN and (event_fgame.key == K_SPACE or event_fgame.key == K_UP):
+            # if bird.y > 0:
+            # bird.velocity_y = bird_flap_velocity
+            # bird.flapped = True
 
         # -> compute the distance to the pipes
         # next pair is the pair with the lowest positive x distance
-        bird.compute_decision_inputs(
-            upper_pipes=up_pipes,
-            lower_pipes=down_pipes,
-            game_images=game_images,
-        )
-        # print(bird.y)
-        # This function will return true if the flappy bird is crashed
-        game_over = isGameOver(bird.x, bird.y, up_pipes, down_pipes)
-        if game_over:
-            return
+        for b in birds:
+            up_dist_y, lo_dist_y, aux_x = b.compute_decision_inputs(
+                upper_pipes=up_pipes,
+                lower_pipes=down_pipes,
+                game_images=game_images,
+            )
 
-        # check for your_score
-        playerMidPos = bird.x + game_images['flappybird'].get_width() / 2
-        for pipe in up_pipes:
-            pipeMidPos = pipe.x + game_images['pipeimage'][0].get_width() / 2
-            if pipeMidPos <= playerMidPos < pipeMidPos + 4:
-                # Printing the score
-                your_score += 1
-                print(f"Your your_score is {your_score}")
+            b.flapped = b.jump_decision(y_dist_bot=lo_dist_y, y_dist_top=up_dist_y, x_dist=aux_x)
 
-        # if bird_velocity_y < bird_Max_Vel_Y and not bird_flapped:
-            # bird_velocity_y += birdAccY
-        if bird.velocity_y < bird.max_vel_y and not bird.flapped:
-            bird.velocity_y += bird.acc_y
+            # print(bird.y)
+            # This function will return true if the flappy bird is crashed
+            game_over = isGameOver(b.x, b.y, up_pipes, down_pipes)
+            b.dead = game_over
+            if game_over:
+                print('bird died', b.dead)
+                continue
 
-        if bird.flapped:
-            bird.flapped = False
+            # check for your_score
+            playerMidPos = b.x + game_images['flappybird'].get_width() / 2
+            for pipe in up_pipes:
+                pipeMidPos = pipe.x + game_images['pipeimage'][0].get_width() / 2
+                if pipeMidPos <= playerMidPos < pipeMidPos + 4:
+                    # Printing the score
+                    your_score += 1
+                    print(f"Your your_score is {your_score}")
 
-        # playerHeight = game_images['flappybird'].get_height()
+            # if bird_velocity_y < bird_Max_Vel_Y and not bird_flapped:
+                # bird_velocity_y += birdAccY
+            if b.velocity_y < b.max_vel_y and not b.flapped:
+                b.velocity_y += b.acc_y
 
-        bird.y = bird.y + min(bird.velocity_y, elevation - bird.y - game_images['flappybird'].get_height())
+            if b.flapped:
+                b.flapped = False
+
+            # playerHeight = game_images['flappybird'].get_height()
+
+            b.y = b.y + min(b.velocity_y, elevation - b.y - game_images['flappybird'].get_height())
 
         # move pipes to the left
         for upperPipe, lowerPipe in zip(up_pipes, down_pipes):
@@ -187,7 +180,10 @@ def flappygame():
                         (lowerPipe.x, lowerPipe.y))
 
         window.blit(game_images['sea_level'], (ground, elevation))
-        window.blit(game_images['flappybird'], (bird.x, bird.y))
+
+        for b in birds:
+            if not b.dead:
+                window.blit(game_images['flappybird'], (b.x, b.y))
 
         # Fetching the digits of score.
         numbers = [int(x) for x in list(str(your_score))]
@@ -204,9 +200,31 @@ def flappygame():
             Xoffset += game_images['scoreimages'][num].get_width()
 
         # Refreshing the game window and displaying the score.
+        for b in birds:
+            # draw lines from the bird to the destination
+            nearest_up, nearest_lo, x_dist = b.get_closest_right_pipes(
+                upper_pipes=up_pipes,
+                lower_pipes=down_pipes,
+                game_images=game_images
+            )
+
+            pygame.draw.line(
+                window,
+                (255, 0, 0),
+                b.get_bird_center(game_images=game_images), (nearest_lo.x, nearest_lo.y)
+            )
+
+            pipe_height = game_images['pipeimage'][0].get_height()
+
+            pygame.draw.line(
+                window,
+                (0, 0, 255),
+                b.get_bird_center(game_images=game_images), (nearest_up.x, nearest_up.y + pipe_height)
+            )
+
         pygame.display.update()
 
-        # Set the framepersecond
+        # Set the frames per second
         frames_per_second_clock.tick(frames_per_second)
 
 
