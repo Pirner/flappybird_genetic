@@ -19,6 +19,7 @@ class Bird(object):
 
         self.inputWeights = np.random.normal(0, scale=0.1, size=(5, 3))
         self.hiddenWeights = np.random.normal(0, scale=0.1, size=(3, 1))
+        self.lived_frames = 0
 
     def get_bird_center(self, game_images):
         """provides the center of the flappy bird"""

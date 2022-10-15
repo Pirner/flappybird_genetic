@@ -4,6 +4,8 @@ import sys
 import pygame
 from pygame.locals import *
 
+from matplotlib import pyplot as plt
+
 from src.bird import Bird
 from src.constants import bird_flap_velocity
 from src.pipe import Pipe, PipePair
@@ -75,7 +77,7 @@ def flappygame():
     vertical = int(window_width / 2)
     ground = 0
     mytempheight = 100
-    n_birds = 10000
+    n_birds = 1000
 
     # Generating two pipes for blit on window
     first_pipe = create_pipe()
@@ -95,11 +97,15 @@ def flappygame():
     # create the bird -
     # bird = Bird(y=int(window_width / 2), x=int(window_width / 5))
     birds = [Bird(y=int(window_width / 2), x=int(window_width / 5)) for i in range(n_birds)]
+    dead_birds = []
 
     while True:
         birds = list(filter(lambda c_b: c_b.dead is False, birds))
         print('alive birds: {0}'.format(len(birds)))
         if len(birds) <= 0:
+            scores = [b.lived_frames for b in dead_birds]
+            plt.hist(scores, bins=50)
+            plt.show()
             return
 
         # Handling the key pressing events
@@ -130,7 +136,8 @@ def flappygame():
             game_over = isGameOver(b.x, b.y, up_pipes, down_pipes)
             b.dead = game_over
             if game_over:
-                print('bird died', b.dead)
+                # print('bird died', b.dead)
+                dead_birds.append(b)
                 continue
 
             # check for your_score
@@ -228,6 +235,9 @@ def flappygame():
 
         # Set the frames per second
         frames_per_second_clock.tick(frames_per_second)
+        for b in birds:
+            if not b.dead:
+                b.lived_frames = b.lived_frames + 1
 
 
 if __name__ == '__main__':
