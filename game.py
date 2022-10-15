@@ -32,7 +32,7 @@ def isGameOver(bird_horizontal, bird_vertical, up_pipes, down_pipes):
     # Checking if bird hits the upper pipe or not
     for pipe in up_pipes:
         pipe_height = game_images['pipeimage'][0].get_height()
-        if (bird_vertical < pipe_height + pipe.y# pipe['y']
+        if (bird_vertical < pipe_height + pipe.y  # pipe['y']
                 and abs(bird_horizontal - pipe.x) < game_images['pipeimage'][0].get_width()):
             return True
 
@@ -75,7 +75,7 @@ def flappygame():
     vertical = int(window_width / 2)
     ground = 0
     mytempheight = 100
-    n_birds = 100
+    n_birds = 10000
 
     # Generating two pipes for blit on window
     first_pipe = create_pipe()
@@ -94,7 +94,7 @@ def flappygame():
 
     # create the bird -
     # bird = Bird(y=int(window_width / 2), x=int(window_width / 5))
-    birds = [Bird(y=int(window_width / 2), x=int(window_width / 5)) for i in range(10)]
+    birds = [Bird(y=int(window_width / 2), x=int(window_width / 5)) for i in range(n_birds)]
 
     while True:
         birds = list(filter(lambda c_b: c_b.dead is False, birds))
@@ -122,6 +122,8 @@ def flappygame():
             )
 
             b.flapped = b.jump_decision(y_dist_bot=lo_dist_y, y_dist_top=up_dist_y, x_dist=aux_x)
+            if b.flapped:
+                b.velocity_y = bird_flap_velocity
 
             # print(bird.y)
             # This function will return true if the flappy bird is crashed
