@@ -72,6 +72,33 @@ class FlappybirdGame(object):
             for b in self.birds:
                 b.breed(male=best_birds.first_bird, female=best_birds.second_bird)
 
+    def draw_nearest_pipe_lines(self):
+        pipe_height = self.game_images['pipe_image'][0].get_height()
+
+        for b in self.birds:
+            if b.dead:
+                continue
+
+            best_pair, x_dist = b.get_closest_right_pipes(
+                pipes=self.pipe_manager.pipes,
+                game_images=self.game_images,
+            )
+
+            nearest_lo = best_pair.lower_pipe
+            nearest_up = best_pair.upper_pipe
+
+            pygame.draw.line(
+                self.window,
+                (255, 0, 0),
+                b.get_bird_center(game_images=self.game_images), (nearest_lo.x, nearest_lo.y)
+            )
+
+            pygame.draw.line(
+                self.window,
+                (0, 0, 255),
+                b.get_bird_center(game_images=self.game_images), (nearest_up.x, nearest_up.y + pipe_height)
+            )
+
     def _make_jump_decisions(self):
         for b in self.birds:
             # first reset before making a decision
@@ -171,11 +198,12 @@ class FlappybirdGame(object):
                 self.window.blit(self.game_images['pipe_image'][0], (pp.upper_pipe.x, pp.upper_pipe.y))
                 self.window.blit(self.game_images['pipe_image'][1], (pp.lower_pipe.x, pp.lower_pipe.y))
             self.window.blit(self.game_images['sea_level'], (self.ground, self.elevation))
+            self.draw_nearest_pipe_lines()
 
             # time.sleep(0.01)
             # Set the frames per second
-            self.frames_per_second_clock.tick(self.frames_per_second)
             pygame.display.update()
+            self.frames_per_second_clock.tick(self.frames_per_second)
 
     def check_pipes(self):
         # if the pipe is out of the screen, remove it

@@ -45,7 +45,7 @@ class Bird(object):
         best_pair = None
 
         for pp in pipes:
-            x_dist_up = pp.lower_pipe.x - self.x
+            x_dist_up = pp.lower_pipe.x + game_images['pipe_image'][0].get_width() - self.x
             if aux_x > x_dist_up >= 0:
                 aux_x = x_dist_up
                 best_pair = pp
