@@ -28,30 +28,28 @@ class Bird(object):
         bird_width = game_images['flappybird'].get_width()
         return self.x + bird_width / 2, self.y
 
-    def get_closest_right_pipes(self, upper_pipes: List[Pipe], lower_pipes: List[Pipe], game_images):
+    def get_closest_right_pipes(self, pipes: List[PipePair], game_images):
         aux_x = math.inf
-        best_up = None
-        best_lo = None
+        best_pair = None
 
-        for up_pipe, lo_pipe in zip(upper_pipes, lower_pipes):
-            x_dist_up = lo_pipe.x - self.x
+        for pp in pipes:
+            x_dist_up = pp.lower_pipe.x - self.x
             if aux_x > x_dist_up >= 0:
                 aux_x = x_dist_up
-                best_up = up_pipe
-                best_lo = lo_pipe
+                best_pair = pp
 
-        return best_up, best_lo, aux_x
+        return best_pair, aux_x
 
-    def compute_decision_inputs(self, upper_pipes: List[Pipe], lower_pipes: List[Pipe], game_images):
+    def compute_decision_inputs(self, pipes: List[PipePair], game_images):
         # -> select pipepair which is the nearest coming from right of the screen (positive x distance)
 
-        pipe_height = game_images['pipeimage'][0].get_height()
+        pipe_height = game_images['pipe_image'][0].get_height()
         bird_height = game_images['flappybird'].get_height()
 
-        best_up, best_lo, aux_x = self.get_closest_right_pipes(upper_pipes=upper_pipes, lower_pipes=lower_pipes, game_images=game_images)
+        best_pair, aux_x = self.get_closest_right_pipes(pipes=pipes, game_images=game_images)
 
-        up_pipe_y = pipe_height + best_up.y
-        lo_pipe_y = bird_height + best_lo.y
+        up_pipe_y = pipe_height + best_pair.upper_pipe.y
+        lo_pipe_y = bird_height + best_pair.lower_pipe.y
         up_dist_y = self.y - up_pipe_y
         lo_dist_y = lo_pipe_y - self.y
 

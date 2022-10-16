@@ -190,9 +190,7 @@ def flappygame():
             down_pipes.append(new_pipe.lower_pipe)
 
         # if the pipe is out of the screen, remove it
-        tmp = -game_images['pipeimage'][0].get_width() / 8
         if up_pipes[0].x < -game_images['pipeimage'][0].get_width():  # old implementation
-        # if up_pipes[0].x <= 90:
             up_pipes.pop(0)
             down_pipes.pop(0)
 
