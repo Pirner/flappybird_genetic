@@ -72,6 +72,18 @@ def create_pipe() -> PipePair:
     return pipe_pair
 
 
+def reset_game():
+    window.blit(game_images['background'], (0, 0))
+    window.blit(game_images['flappybird'], (horizontal, vertical))
+    window.blit(game_images['sea_level'], (ground, elevation))
+
+    # Just Refresh the screen
+    pygame.display.update()
+
+    # set the rate of frame per second
+    frames_per_second_clock.tick(frames_per_second)
+
+
 def flappygame():
     your_score = 0
     horizontal = int(window_width / 5)
@@ -84,6 +96,7 @@ def flappygame():
     first_pipe = create_pipe()
     second_pipe = create_pipe()
     best_birds = None
+    n_evolutions = 10
 
     # set default values
     first_pipe.upper_pipe.x = window_width + 300 - mytempheight
@@ -100,11 +113,10 @@ def flappygame():
     # bird = Bird(y=int(window_width / 2), x=int(window_width / 5))
     birds = [Bird(y=int(window_width / 2), x=int(window_width / 5)) for i in range(n_birds)]
     dead_birds = []
-    birds_dead = False
 
     while True:
         birds = list(filter(lambda c_b: c_b.dead is False, birds))
-        print('alive birds: {0}'.format(len(birds)))
+        # print('alive birds: {0}'.format(len(birds)))
         if len(birds) <= 0:
             scores = [b.lived_frames for b in dead_birds]
             # sort by salary (Descending order)

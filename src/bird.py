@@ -1,6 +1,7 @@
 from typing import List
 import math
 import numpy as np
+import random
 
 from src.pipe import PipePair, Pipe
 
@@ -87,3 +88,40 @@ class Bird(object):
         else:
             # print('bird does not flap')
             return False
+
+    def breed(self, male, female):
+        """Generate a new brain (neural network) from two parent birds
+             by averaging their brains and mutating them afterwards
+        INPUT:  male - The male bird object (of class bird)
+                female - The female bird object (of class bird)
+        OUTPUT:	None"""
+        for i in range(len(self.inputWeights)):
+            self.inputWeights[i] = (male.inputWeights[i] + female.inputWeights[i]) / 2
+
+        for i in range(len(self.hiddenWeights)):
+            self.hiddenWeights[i] = (male.hiddenWeights[i] + female.hiddenWeights[i]) / 2
+
+        self.mutate()
+
+    def mutate(self):
+        for i in range(len(self.inputWeights)):
+            for j in range(len(self.inputWeights[i])):
+                self.inputWeights[i][j] = self.get_mutated_gene(self.inputWeights[i][j])
+
+        for i in range(len(self.hiddenWeights)):
+            for j in range(len(self.hiddenWeights[i])):
+                self.hiddenWeights[i][j] = self.get_mutated_gene(self.hiddenWeights[i][j])
+
+    def get_mutated_gene(self, weight):
+        multiplier = 0
+        learning_rate = random.randint(0, 25) * 0.005
+
+        rand_bool = bool(random.getrandbits(1))
+        rand_bool_2 = bool(random.getrandbits(1))
+        if rand_bool and rand_bool_2:
+            multiplier = 1
+        elif not rand_bool and rand_bool_2:
+            multiplier = -1
+
+        mutated_weight = weight + learning_rate * multiplier
+        return mutated_weight
