@@ -3,10 +3,12 @@ from pygame.locals import *
 import random
 import time
 import sys
+from matplotlib import pyplot as plt
 
 from src.pipe import Pipe, PipePair, PipeManager
 from src.bird import Bird
 from src.constants import bird_flap_velocity
+from src.genetic import BestBirds
 
 
 class FlappybirdGame(object):
@@ -28,6 +30,9 @@ class FlappybirdGame(object):
         self.pipe_manager = PipeManager(pipes=[])
         self.pipe_vel_x = -4  # pipe velocity along x
 
+        self.n_birds = 100
+        self.birds = []
+
     def check_collisions(self, bird: Bird):
         if bird.y > self.elevation - 26 or bird.y < 0:
             return True
@@ -44,50 +49,121 @@ class FlappybirdGame(object):
 
         return False
 
+    def reset_birds(self):
+        for b in self.birds:
+            b.reset_bird(y=int(self.window_w / 2), x=int(self.window_w / 5))
+
     def run_mutation(self):
+        self.birds = [Bird(y=int(self.window_w / 2), x=int(self.window_w / 5)) for i in range(self.n_birds)]
+
         while True:
             self.run_game()
+            # self.birds = [Bird(y=int(self.window_w / 2), x=int(self.window_w / 5)) for i in range(self.n_birds)]
+            # get best birds
+            # dead_birds.sort(key=lambda x: x.lived_frames, reverse=True)
+            # best_birds = BestBirds(first_bird=dead_birds[0], second_bird=dead_birds[1])
+            self.birds.sort(key=lambda x: x.lived_frames, reverse=True)
+            best_birds = BestBirds(first_bird=self.birds[0], second_bird=self.birds[1])
+            # scores = [b.lived_frames for b in self.birds]
+            # plt.hist(scores, bins=100)
+            # plt.show()
+            self.reset_birds()
+            # breed the birds
+            for b in self.birds:
+                b.breed(male=best_birds.first_bird, female=best_birds.second_bird)
 
-    def run_game(self):
-        self.setup_game()
-        bird = Bird(y=int(self.window_h / 2), x=int(self.window_w / 5))
+    def _make_jump_decisions(self):
+        for b in self.birds:
+            # first reset before making a decision
+            b.flapped = False
 
-        while True:
-            # use key pressing
-            # for event in pygame.event.get():
-            # if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-            # pygame.quit()
-            # sys.exit()
-            # if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
-            # if bird.y > 0:
-            # bird.flapped = True
-            up_dist_y, lo_dist_y, aux_x = bird.compute_decision_inputs(
+            if b.dead:
+                continue
+
+            up_dist_y, lo_dist_y, aux_x = b.compute_decision_inputs(
                 pipes=self.pipe_manager.pipes,
                 game_images=self.game_images
             )
+            b.flapped = b.jump_decision(y_dist_bot=lo_dist_y, y_dist_top=up_dist_y, x_dist=aux_x)
+            # make speed upwards
+            if b.flapped:
+                b.velocity_y = bird_flap_velocity
+            # make speed downwards if not flapped
+            if b.velocity_y < b.max_vel_y and not b.flapped:
+                b.velocity_y += b.acc_y
 
-            bird.flapped = bird.jump_decision(y_dist_bot=lo_dist_y, y_dist_top=up_dist_y, x_dist=aux_x)
-            if bird.flapped:
-                bird.velocity_y = bird_flap_velocity
+    def check_bird_live_status(self):
+        for b in self.birds:
+            if b.dead:
+                continue
+            b.dead = self.check_collisions(b)
 
-            # check if the game is over - collision checking
-            if self.check_collisions(bird):
-                break
-
-            if bird.velocity_y < bird.max_vel_y and not bird.flapped:
-                bird.velocity_y += bird.acc_y
+    def update_bird_positions(self):
+        for bird in self.birds:
+            if bird.dead:
+                continue
 
             bird.y = bird.y + min(
                 bird.velocity_y,
                 self.elevation - bird.y - self.game_images['flappybird'].get_height()
             )
 
-            bird.flapped = False  # reset the flapping operation
+    def display_birds(self):
+        for bird in self.birds:
+            if not bird.dead:
+                self.window.blit(self.game_images['flappybird'], (bird.x, bird.y))
+
+    def get_n_alive_birds(self):
+        alive_birds = list(filter(lambda c_b: c_b.dead is False, self.birds))
+        return len(alive_birds)
+
+    def _increment_score_on_alive_birds(self):
+        for b in self.birds:
+            if not b.dead:
+                b.lived_frames = b.lived_frames + 1
+
+    def run_game(self):
+        self.setup_game()
+        # bird = Bird(y=int(self.window_h / 2), x=int(self.window_w / 5))
+
+        while True:
+            # up_dist_y, lo_dist_y, aux_x = bird.compute_decision_inputs(
+            # pipes=self.pipe_manager.pipes,
+            # game_images=self.game_images
+            # )
+            # print('number of alive birds: {0}'.format(self.get_n_alive_birds()))
+            if self.get_n_alive_birds() <= 0:
+                break
+
+            # bird.flapped = bird.jump_decision(y_dist_bot=lo_dist_y, y_dist_top=up_dist_y, x_dist=aux_x)
+            # if bird.flapped:
+            # bird.velocity_y = bird_flap_velocity
+            self._make_jump_decisions()
+
+            # check if the game is over - collision checking
+            # if self.check_collisions(bird):
+            # break
+
+            self.update_bird_positions()
+            self.check_bird_live_status()
+
+            self._increment_score_on_alive_birds()
+
+            # if bird.velocity_y < bird.max_vel_y and not bird.flapped:
+            # bird.velocity_y += bird.acc_y
+
+            # bird.y = bird.y + min(
+            # bird.velocity_y,
+            # self.elevation - bird.y - self.game_images['flappybird'].get_height()
+            # )
+
+            # bird.flapped = False  # reset the flapping operation
             # plot the sea_level image
             self.window.blit(self.game_images['sea_level'], (self.ground, self.elevation))
             self.window.blit(self.game_images['background'], (0, 0))
+            self.display_birds()
 
-            self.window.blit(self.game_images['flappybird'], (bird.x, bird.y))
+            # self.window.blit(self.game_images['flappybird'], (bird.x, bird.y))
             self.pipe_manager.apply_x_velocity(x_vel=self.pipe_vel_x)
             self.check_pipes()
 

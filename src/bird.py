@@ -22,11 +22,23 @@ class Bird(object):
         self.hiddenWeights = np.random.normal(0, scale=0.1, size=(3, 1))
         self.lived_frames = 0
 
+    def reset_bird(self, x, y):
+        self.velocity_y = -9
+        self.max_vel_y = 10
+        self.min_vel_y = -8
+        self.acc_y = 1
+        self.flapped = False
+        self.y = y  # vertical
+        self.x = x  # horizontal
+
+        self.dead = False
+        self.lived_frames = 0
+
     def get_bird_center(self, game_images):
-        """provides the center of the flappy bird"""
-        bird_height = game_images['flappybird'].get_height()
-        bird_width = game_images['flappybird'].get_width()
-        return self.x + bird_width / 2, self.y
+            """provides the center of the flappy bird"""
+            bird_height = game_images['flappybird'].get_height()
+            bird_width = game_images['flappybird'].get_width()
+            return self.x + bird_width / 2, self.y
 
     def get_closest_right_pipes(self, pipes: List[PipePair], game_images):
         aux_x = math.inf
